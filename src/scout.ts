@@ -1,15 +1,12 @@
-// ===========================================================================
+
 // STARTUP SCOUT - an AI agent that researches a startup idea, then CHECKS
 // its own work and improves it until it is good enough.
 //
 // There are two loops here:
 //   1. INNER loop  - inside writeDraft/revise, the AI searches the web as many
 //                    times as it needs (handled by the AI SDK).
-//   2. OUTER loop  - the reflection loop we write ourselves in main():
+//   2. OUTER loop  - the reflection loop in main():
 //                    draft -> critic checks it -> revise -> check again ...
-//
-// Everything is kept basic on purpose so it is easy to read.
-// ===========================================================================
 
 import "dotenv/config";
 import { generateText, generateObject, stepCountIs } from "ai";
@@ -18,16 +15,15 @@ import { z } from "zod";
 import { writeFileSync } from "fs";
 
 
-// The idea you want to research. Change this line for a different idea.
+// The idea we want to research.
 const idea = "an AI tutor that quizzes Indian students for board exams";
 
 // Which AI model to use.
 const model = anthropic("claude-sonnet-4-6");
 
 
-// ---------------------------------------------------------------------------
-// The instructions for the writer (its job description).
-// ---------------------------------------------------------------------------
+// Instructions for the AI when it is writing the report.  
+
 const instructions = `
 You are Startup Scout, a helpful and honest startup analyst.
 
@@ -48,9 +44,9 @@ Write the full report as your reply (do not leave anything out).
 `;
 
 
-// ---------------------------------------------------------------------------
-// JOB 1: Write the first draft of the report (this part can search the web).
-// ---------------------------------------------------------------------------
+
+// JOB 1: Write the first draft of the report using web search  
+
 async function writeDraft(idea: string): Promise<string> {
   const result = await generateText({
     model: model,
@@ -70,11 +66,10 @@ async function writeDraft(idea: string): Promise<string> {
 }
 
 
-// ---------------------------------------------------------------------------
 // JOB 2: The CRITIC. It reads a draft and judges whether it is good enough.
 // generateObject makes the AI answer in a fixed shape (score, goodEnough,
 // feedback) instead of free text, so our code can easily use the result.
-// ---------------------------------------------------------------------------
+
 const reviewShape = z.object({
   score: z.number().describe("Quality score from 1 to 10"),
   goodEnough: z.boolean().describe("true only if this is genuinely ready to send to an investor"),
@@ -92,9 +87,8 @@ async function critique(draft: string) {
 }
 
 
-// ---------------------------------------------------------------------------
 // JOB 3: Rewrite the report using the critic's feedback (can search again).
-// ---------------------------------------------------------------------------
+
 async function revise(draft: string, feedback: string): Promise<string> {
   const result = await generateText({
     model: model,
@@ -118,9 +112,9 @@ async function revise(draft: string, feedback: string): Promise<string> {
 }
 
 
-// ---------------------------------------------------------------------------
+
 // PUT IT ALL TOGETHER: write -> check -> improve -> check -> ...
-// ---------------------------------------------------------------------------
+
 async function main() {
   console.log("Researching idea:", idea);
   console.log("Please wait, this can take a minute...\n");
